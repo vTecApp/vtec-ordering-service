@@ -46,11 +46,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             if (string.IsNullOrEmpty(code))
                 return BadRequest();
 
-            var cmdText = "select b.ProductID, b.ProductName, b.ProductName1, b.ProductName2, b.ProductName3 \r\nfrom materials a\r\njoin products b\r\non a.MaterialID=b.ProductID\r\nwhere a.Deleted=0 and b.Deleted=0";
-            if (code.Length == 13 && code.StartsWith("88"))
-                cmdText += " and a.MaterialBarCode=@code";
-            else
-                cmdText += " and a.MaterialCode=@code";
+            var cmdText = "select p.ProductID,P.ProductCode,p.ProductName,p.ProductName1,p.ProductName2,p.ProductName3\r\nfrom products p\r\njoin products_barcode pb\r\non p.ProductID=pb.ProductID\r\nwhere pb.ProductBarCode=@code;";
 
             using (var conn = (MySqlConnection)await _database.ConnectAsync())
             {
