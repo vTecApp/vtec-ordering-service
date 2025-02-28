@@ -5,6 +5,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Net;
@@ -324,6 +325,9 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                     docDetail.PricePerUnit = d.PricePerUnit;
                                     docDetail.DiscountType = d.DiscountType;
                                     docDetail.DiscountValue = d.DiscountValue;
+                                    docDetail.UnitLargeID = d.UnitLargeID;
+                                    docDetail.UnitSmallID = d.UnitSmallID;
+                                    docDetail.UnitName = d.UnitName;
 
                                     if (string.IsNullOrEmpty(docDetail.CurrentQty))
                                         docDetail.CurrentQty = "0";
@@ -390,29 +394,43 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             {
                 using (var conn = (MySqlConnection)await _database.ConnectAsync())
                 {
-                    var dfSaleModeId = Convert.ToInt32(await MySqlHelper.ExecuteScalarAsync(conn, "select SaleModeID from salemode where IsDefault=1;"));
                     var saleDate = DateTime.Today;
-                    var cmdText = @"select a.MaterialID, a.MaterialCode, a.MaterialBarCode, a.MaterialName, c.UnitSmallID,c.UnitLargeID,c.UnitLargeRatio,c.UnitSmallRatio,d.UnitLargeName As UnitName ,c.MaterialUnitRatioCode
-                                from materials a inner join unitsmall b on a.UnitSmallID=b.UnitSmallID
-                                inner join unitratio c on b.UnitSmallID=c.UnitSmallID
-                                inner join unitlarge d on c.UnitLargeID=d.UnitLargeID
-                                where a.Deleted=0 and c.Deleted=0 and (a.MaterialCode=@barcode or a.MaterialBarCode=@barcode);
-                                select p.ProductID, p.ProductCode, p.ProductName, case when mp.ProductPrice is null then md.ProductPrice else mp.ProductPrice end as ProductPrice 
-                                from products p 
-                                join materials m on p.ProductID=m.MaterialID
-                                left outer join (select ProductID, ProductPrice from productprice where FromDate <= @saleDate and ToDate >= @saleDate and SaleMode=@dfSaleMode) mp on p.ProductID=mp.ProductID 
-                                left outer join (select ProductID, ProductPrice from productprice where FromDate <= @saleDate and ToDate >= @saleDate and SaleMode=1) md on p.ProductID=md.ProductID 
-                                where m.MaterialCode=@barcode and p.Deleted=0;";
+                    var cmdText = @"select mg.MaterialGroupID,
+                                    md.MaterialDeptID,
+                                    m.MaterialID,
+                                    ur.UnitID,
+                                    ur.UnitSmallID,
+                                    ur.UnitLargeID,
+                                    mg.MaterialGroupCode,
+                                    mg.MaterialGroupName,
+                                    md.MaterialDeptCode,
+                                    md.MaterialDeptName,m.MaterialCode,
+                                    m.MaterialName,
+                                    0 as CurrentStock,
+                                    pp.ProductID, 
+                                    pp.ProductCode, pp.ProductName,
+                                    ppb.ProductBarCode,
+                                    ur.UnitSmallRatio,ul.UnitLargeName As UnitName,
+                                    m.MaterialTaxType As IsVAT,
+                                    1 As IsProduct,
+                                    pr.ProductPrice 
+                                    from materials m 
+                                    inner join unitratio ur ON m.UnitSmallID=ur.UnitSmallID 
+                                    inner join unitlarge ul ON ur.UnitLargeID=ul.UnitLargeID 
+                                    inner join materialdept md ON m.MaterialDeptID=md.MaterialDeptID 
+                                    inner join materialgroup mg ON m.MaterialGroupID=mg.MaterialGroupID 
+                                    inner join products_barcode ppb ON ur.MaterialUnitRatioCode= ppb.ProductBarCode
+                                    inner join products pp on ppb.ProductID=pp.ProductID
+                                    inner join productprice pr on pp.ProductID=pr.ProductID
+                                    where m.Deleted=0 
+                                    and ur.MaterialUnitRatioCode=@barcode";
                     var cmd = new MySqlCommand(cmdText, conn);
-                    cmd.Parameters.Add(new MySqlParameter("@dfSaleMode", dfSaleModeId));
-                    cmd.Parameters.Add(new MySqlParameter("@saleDate", saleDate));
                     cmd.Parameters.Add(new MySqlParameter("@barcode", barcode));
 
                     var ds = new DataSet();
                     var adapter = new MySqlDataAdapter(cmd);
                     adapter.Fill(ds);
                     ds.Tables[0].TableName = "MaterialData";
-                    ds.Tables[1].TableName = "PriceData";
 
                     try
                     {
@@ -429,8 +447,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         var isSucc = posModule.Report_StockCard(ref respText, ref dtColumn, ref dtStock, shopId, fromDate, toDate, docMonth, docYear, "", 0, 0, materialId, "", conn);
                         if (isSucc)
                         {
-                            dtStock.TableName = "StockData";
-                            ds.Tables.Add(dtStock);
+                            ds.Tables[0].Rows[0]["CurrentStock"] = dtStock.Rows[0]["Group_10000"];
                         }
                     }
                     catch { }
