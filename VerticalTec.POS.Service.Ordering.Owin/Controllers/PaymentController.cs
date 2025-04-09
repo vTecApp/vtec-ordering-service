@@ -514,8 +514,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                         PrinterNames = paymentData.PrinterNames,
                                         PaperSize = paymentData.PaperSize
                                     };
-
                                     await _printService.PrintBill(printData);
+
                                     await _printService.PrintOrder(new TransactionPayload
                                     {
                                         TransactionID = paymentData.TransactionID,

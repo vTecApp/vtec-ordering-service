@@ -148,7 +148,22 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 try
                 {
                     var dsPrintData = await _orderingService.GetBillDetail(conn, payload.TransactionID, payload.ComputerID, payload.ShopID, payload.LangID);
-                    await PrintAsync(payload.ShopID, payload.ComputerID, payload.PrinterIds, payload.PrinterNames, dsPrintData, payload.PaperSize);
+                    var printerNames = new List<string>();
+                    try
+                    {
+                        printerNames = payload.PrinterNames.Split(',').ToList();
+                    }
+                    catch
+                    {
+                        printerNames = new List<string>
+                        {
+                            payload.PrinterNames
+                        };
+                    }
+                    foreach (var printerName in printerNames)
+                    {
+                        await PrintAsync(payload.ShopID, payload.ComputerID, payload.PrinterIds, printerName, dsPrintData, payload.PaperSize);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -184,8 +199,23 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 {
                     var dsPrintData = await _orderingService.CheckBillAsync(conn, payload.TransactionID, payload.ComputerID,
                         payload.ShopID, payload.TerminalID, payload.StaffID, payload.LangID, true);
-                    await PrintAsync(payload.ShopID, payload.ComputerID, payload.PrinterIds, payload.PrinterNames, dsPrintData, 80);
 
+                    var printerNames = new List<string>();
+                    try
+                    {
+                        printerNames = payload.PrinterNames.Split(',').ToList();
+                    }
+                    catch
+                    {
+                        printerNames = new List<string>
+                        {
+                            payload.PrinterNames
+                        };
+                    }
+                    foreach (var printerName in printerNames)
+                    {
+                        await PrintAsync(payload.ShopID, payload.ComputerID, payload.PrinterIds, printerName, dsPrintData, 80);
+                    }
                     await _orderingService.UpdateTableStatusAsync(conn, payload.TransactionID, payload.ComputerID, payload.ShopID, payload.LangID);
                 }
                 catch (Exception ex)
