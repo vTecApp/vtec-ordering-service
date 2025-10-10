@@ -74,15 +74,21 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         if (paymentData.EDCType == 0)
                             throw new PaymentException(ErrorCodes.NoPaymentConfig, $"Not found PayType of EDCType {paymentData.EDCType}");
 
-                        var cmd = _database.CreateCommand("select PayTypeID from paytype where EDCType=@edcType", conn);
-                        cmd.Parameters.Add(_database.CreateParameter("@edcType", paymentData.EDCType));
-                        using (IDataReader reader = cmd.ExecuteReader())
+                        var cmd = _database.CreateCommand("", conn);
+
+                        if (paymentData.PayTypeID == 0)
                         {
-                            if (reader.Read())
+                            cmd.CommandText = "select PayTypeID from paytype where EDCType=@edcType";
+                            cmd.Parameters.Add(_database.CreateParameter("@edcType", paymentData.EDCType));
+                            using (IDataReader reader = cmd.ExecuteReader())
                             {
-                                paymentData.PayTypeID = reader.GetValue<int>("PayTypeID");
+                                if (reader.Read())
+                                {
+                                    paymentData.PayTypeID = reader.GetValue<int>("PayTypeID");
+                                }
                             }
                         }
+
                         if (paymentData.PayTypeID == 0)
                             throw new PaymentException(ErrorCodes.NoPaymentConfig, $"Not found PayType of EDCType {paymentData.EDCType}");
 
