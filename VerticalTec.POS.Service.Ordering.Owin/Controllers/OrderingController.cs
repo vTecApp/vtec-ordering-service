@@ -381,17 +381,33 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             if (isPrint)
                             {
                                 var tableId = 0;
-                                cmd.CommandText = "select TableID from order_tablefront where TransactionID=@transId and ComputerID=@compId and SaleDate=@saleDate and ShopID=@shopId";
-                                cmd.Parameters.Add(_database.CreateParameter("@transId", transactionId));
-                                cmd.Parameters.Add(_database.CreateParameter("@compId", computerId));
-                                cmd.Parameters.Add(_database.CreateParameter("@saleDate", saleDate));
-                                cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
 
-                                using (var reader = _database.ExecuteReaderAsync(cmd).Result)
+                                try
                                 {
-                                    if (reader.Read())
+                                    var orderObj = JObject.Parse(jsonData);
+                                    var tableName = orderObj["tableName"].ToString();
+                                    cmd.CommandText = "select TableID from tableno where TableName=@tableName";
+                                    cmd.Parameters.Clear();
+                                    cmd.Parameters.Add(_database.CreateParameter("@tableName", tableName));
+                                    tableId = (int)cmd.ExecuteNonQuery();
+                                }
+                                catch { }
+
+                                if (tableId == 0)
+                                {
+                                    cmd.CommandText = "select TableID from order_tablefront where TransactionID=@transId and ComputerID=@compId and SaleDate=@saleDate and ShopID=@shopId";
+                                    cmd.Parameters.Clear();
+                                    cmd.Parameters.Add(_database.CreateParameter("@transId", transactionId));
+                                    cmd.Parameters.Add(_database.CreateParameter("@compId", computerId));
+                                    cmd.Parameters.Add(_database.CreateParameter("@saleDate", saleDate));
+                                    cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
+
+                                    using (var reader = _database.ExecuteReaderAsync(cmd).Result)
                                     {
-                                        tableId = reader.GetValue<int>("TableID");
+                                        if (reader.Read())
+                                        {
+                                            tableId = reader.GetValue<int>("TableID");
+                                        }
                                     }
                                 }
 
