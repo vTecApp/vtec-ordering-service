@@ -389,7 +389,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                     cmd.CommandText = "select TableID from tableno where TableName=@tableName";
                                     cmd.Parameters.Clear();
                                     cmd.Parameters.Add(_database.CreateParameter("@tableName", tableName));
-                                    tableId = (int)cmd.ExecuteNonQuery();
+                                    tableId = (int)cmd.ExecuteScalar();
                                 }
                                 catch { }
 
