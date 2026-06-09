@@ -1,33 +1,22 @@
-﻿using DevExpress.XtraEditors.Controls;
-using Hangfire;
-using LoyaltyInterface3;
-using Microsoft.Owin;
-using MySql.Data.MySqlClient;
-using MySqlX.XDevAPI.Common;
+﻿using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
-using ResCenterObjLib;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
-using System.IO.Ports;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Runtime.Remoting.Metadata.W3cXsd2001;
 using System.Text;
 using System.Threading.Tasks;
-using System.Transactions;
 using System.Web.Http;
 using VerticalTec.POS.Database;
 using VerticalTec.POS.Service.Ordering.Owin.Exceptions;
 using VerticalTec.POS.Service.Ordering.Owin.Models;
 using VerticalTec.POS.Service.Ordering.Owin.Services;
 using VerticalTec.POS.Utils;
-using VoucherManagerLib;
 using vtecPOS.GlobalFunctions;
-using static vtecPOS.GlobalFunctions.LoyaltyObj;
 
 namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 {
@@ -105,6 +94,12 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         {
                             success = EdcObjLib.BCA_V3.ClassEdcLib_BCA_V3_IP_CC.SendEdc_CreditCardPayment(paymentData.EDCIPAddress,
                                 paymentData.EDCTcpPort, paymentData.PayAmount, paymentData.TransactionID, "", "", ref cardData, ref respText);
+                        }
+                        else if (paymentData.EDCType == 48)
+                        {
+                            var timeout = 120;
+                            success = EdcObjLib.Mandiri.ClassEdcLib_Mandiri_EDC_QR.SendEdc_QrCodePayment(paymentData.EDCPort, timeout, paymentData.PayAmount,
+                                paymentData.TransactionID, "", "", ref cardData, ref respText);
                         }
 
                         if (!success)
