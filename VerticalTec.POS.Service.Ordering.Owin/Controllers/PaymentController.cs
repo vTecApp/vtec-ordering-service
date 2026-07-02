@@ -190,6 +190,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                 _log.Error($"{cmd.CommandText} => {ex.Message}");
                             }
 
+
+                            _log.Info($"Start printing order trankey: {paymentData.TransactionID}:{paymentData.ComputerID}");
                             await _printService.PrintOrder(new TransactionPayload
                             {
                                 TransactionID = paymentData.TransactionID,
@@ -202,6 +204,10 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                 PrinterNames = paymentData.PrinterNames
                             });
 
+                            _log.Info($"Finished print order trankey: {paymentData.TransactionID}:{paymentData.ComputerID}");
+
+
+                            _log.Info($"Start printing bill trankey: {paymentData.TransactionID}:{paymentData.ComputerID}");
                             var printData = new PrintData()
                             {
                                 TransactionID = paymentData.TransactionID,
@@ -213,6 +219,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                 PaperSize = paymentData.PaperSize
                             };
                             await _printService.PrintBill(printData);
+
+                            _log.Info($"Finished print bill trankey: {paymentData.TransactionID}:{paymentData.ComputerID}");
                             _messenger.SendMessage();
                         }
                     }
@@ -225,6 +233,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
                     _log.Error(ex.Message);
                     result.StatusCode = HttpStatusCode.BadRequest;
+
+                    _log.Error("EdcPayment Error => {0}", ex.Message);
                 }
                 return result;
             }
@@ -505,18 +515,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                         }
                                     }
 
-                                    var printData = new PrintData()
-                                    {
-                                        TransactionID = paymentData.TransactionID,
-                                        ComputerID = paymentData.ComputerID,
-                                        ShopID = paymentData.ShopID,
-                                        LangID = paymentData.LangID,
-                                        PrinterIds = paymentData.PrinterIds,
-                                        PrinterNames = paymentData.PrinterNames,
-                                        PaperSize = paymentData.PaperSize
-                                    };
-                                    await _printService.PrintBill(printData);
-
+                                    _log.Info($"Start printing order trankey: {paymentData.TransactionID}:{paymentData.ComputerID}");
                                     await _printService.PrintOrder(new TransactionPayload
                                     {
                                         TransactionID = paymentData.TransactionID,
@@ -528,6 +527,26 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                         PrinterIds = paymentData.PrinterIds,
                                         PrinterNames = paymentData.PrinterNames
                                     });
+                                    _log.Info($"Finished print order trankey: {paymentData.TransactionID}:{paymentData.ComputerID}");
+
+
+                                    _log.Info($"Start printing bill trankey: {paymentData.TransactionID}:{paymentData.ComputerID}");
+
+                                    var printData = new PrintData()
+                                    {
+                                        TransactionID = paymentData.TransactionID,
+                                        ComputerID = paymentData.ComputerID,
+                                        ShopID = paymentData.ShopID,
+                                        LangID = paymentData.LangID,
+                                        PrinterIds = paymentData.PrinterIds,
+                                        PrinterNames = paymentData.PrinterNames,
+                                        PaperSize = paymentData.PaperSize
+                                    };
+
+                                    await _printService.PrintBill(printData);
+
+                                    _log.Info($"Finished print bill trankey: {paymentData.TransactionID}:{paymentData.ComputerID}");
+
                                     _messenger.SendMessage();
                                 }
                             }
