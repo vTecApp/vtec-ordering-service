@@ -13,6 +13,7 @@ using Unity;
 using Unity.Injection;
 using Unity.Lifetime;
 using VerticalTec.POS.Database;
+using VerticalTec.POS.Service.Ordering.Owin.Extensions;
 using VerticalTec.POS.Service.Ordering.Owin.Models;
 using VerticalTec.POS.Service.Ordering.Owin.Services;
 
@@ -77,6 +78,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin
             _container.RegisterType<IPaymentService, PaymentService>(new TransientLifetimeManager());
             _container.RegisterSingleton<IMessengerService, MessengerService>();
             _container.RegisterSingleton<IPrintService, PrintService>();
+            _container.RegisterType<OrderingRpcService>(new HierarchicalLifetimeManager());
 
             config.DependencyResolver = new UnityResolver(_container);
 
@@ -95,6 +97,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin
             appBuilder.UseHangfireAspNet(GetHangfireServers);
             appBuilder.UseHangfireDashboard("/jobs");
             appBuilder.UseWebApi(config);
+            appBuilder.UseJsonRpc<OrderingRpcService>(_container);
 
             GlobalHost.Configuration.MaxIncomingWebSocketMessageSize = null;
         }
