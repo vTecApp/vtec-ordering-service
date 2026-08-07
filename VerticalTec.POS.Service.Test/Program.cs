@@ -13,7 +13,7 @@ namespace VerticalTec.POS.Service.Test
     {
         static void Main(string[] args)
         {
-            string baseAddress = "http://127.0.0.1:9500/";
+            string baseAddress = "http://127.0.0.1:9200/";
 
             try
             {
